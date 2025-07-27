@@ -1,0 +1,390 @@
+/* CodeMonkey Cafe CSS File */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: calc(10px + 2vmin);
+  color: #333;
+  background-color: #282c34;
+}
+
+button {
+  background-color: #282c34;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background-color: #333;
+}
+
+.order-button {
+  background-color: white;
+  color: #282c34;
+  border: 3px solid #282c34;
+  font-size: medium;
+  text-align: center;
+  padding: 8px;
+  margin-left: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  vertical-align: bottom;
+  transition: all 0.2s ease;
+}
+
+.order-button:hover {
+  background-color: #282c34;
+  color: white;
+}
+
+.order-button:active {
+  transform: scale(0.95); 
+}
+
+.click-me{
+  cursor: pointer;
+  padding: 20px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background-color: white;
+  color: #282c34;
+  border: 3px solid #282c34;
+}
+
+.click-me:hover {
+  background-color: #282c34;
+  color: white;
+}
+
+.click-me:active {
+  transform: scale(0.95); 
+}
+
+.app-container {
+  display: flex-start;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.app-header {
+  background-color: #282c34;
+  width: 100%;
+  color: white;
+  display: flex;
+  gap: 5px;
+  padding: 20px;
+}
+
+.app-menu {
+  margin-left: 15px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cafe-title {
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.cafe-strapline {
+  font-size: 16px;
+  font-style: italic;
+  text-align: right;
+}
+
+.menu-container {
+  height: 90vh;
+  width: 100%;
+  overflow-y: auto;
+}
+
+.menu-item {
+  display: flex;
+  align-items: flex-start; /* Align items at the top */
+  background-color: #f0f0f0;
+  margin-bottom: 8px;
+  margin-left: 20px;
+  padding: 16px;
+  border-radius: 4px;
+  flex-direction: row;
+  text-align: left;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.menu-item-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-right: 15px; 
+  width: 100px;
+}
+
+.menu-item-description-container {
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid #333; */
+}
+
+.menu-item-description {
+  font-size: 16px;
+  color: #666;
+  font-style: italic;
+  margin-right: 15px; 
+  width: 300px;
+}
+
+.menu-item-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  width: 75px;
+}
+
+.extras {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+  font-size: 14px;
+  font-style: bold;
+  border: 1px solid #333;
+}
+
+.extras-container {
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 1px; 
+  margin: 0; 
+  padding: 0; 
+  width: 100%; 
+  max-width: 300px;
+}
+
+.extras-container > * {
+  margin: 0; 
+  padding: 0; 
+}
+
+.order-extras-container {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5px;
+  padding: 5px;
+  width: 175px;
+  border: 0;
+}
+
+.menu-item-image {
+  width: 50px;
+  vertical-align: bottom;
+  margin-right: 15px;
+  z-index:5;
+}
+
+.table-number{
+  display:flex;
+  flex-direction: row;
+  margin-left: 20px;
+  font-size: 16px;
+  color:#ccc;
+  gap: 10px;
+}
+
+.show-order {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid #333;
+}
+
+.show-order > div { 
+  display: flex; 
+  align-items: right; 
+}
+
+.remove-item {
+  margin-left: 10px;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  cursor: pointer;
+}
+
+.menu-category-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 20px;
+  color: #ccc;
+}
+
+.show-tablenumber {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.total-cost {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.bottom-strap {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  padding: 10px;
+  font-size: small;
+  color: #ccc;
+  background-color: #282c34;
+  z-index: 100;
+}
+
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.lightbox-content {
+  position: relative;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.lightbox-image {
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: black;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 40%;
+}
+
+
+
+.mobile-title-image {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+}
+
+/*  ==============================================================================
+      Responsive Styles
+    ============================================================================== */
+
+@media (max-width: 768px) {
+
+  button {
+    background-color: #282c34;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .menu-order-button {
+    background-color: white;
+    color: #282c34;
+    border: 3px solid #282c34;
+    font-size: medium;
+    text-align: center;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    vertical-align: bottom;
+    transition: all 0.2s ease;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .app-menu {
+    margin-left: 0;
+  }
+  
+  .cafe-title {
+    font-size: 24px;
+  }
+  
+  .cafe-strapline {
+    font-size: 14px;
+  }
+  
+  .menu-item {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 20px;
+  }
+  
+  .menu-item-title {
+    margin-right: 0;
+    margin-bottom: 5px;
+    width: auto;
+  }
+  
+  .menu-item-description {
+    margin-left: 20px;
+    margin-right: 0;
+    width: auto;
+  }
+  
+  .menu-item-price {
+    margin-top: 5px;
+    width: auto;
+  }
+  
+  .menu-item-image {
+    margin-right: 0;
+  }
+  
+  .show-tablenumber {
+    font-size: 16px;
+  }
+  
+  .bottom-strap {
+    font-size: x-small;
+  }
+
+  .mobile-title-image {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .extras-container {
+    width: 300px;
+    margin-left: 20px;
+  }
+}
