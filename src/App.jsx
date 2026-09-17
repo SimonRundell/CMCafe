@@ -4,27 +4,14 @@ import Menu from './getMenu'
 import Strapline from './strapline'
 import { notification } from 'antd'
 
-function setCookie(name, value, days) {
-  const d = new Date();
-  d.setTime(d.getTime() + (days*24*60*60*1000));
-  let expires = "expires="+ d.toUTCString();
-  document.cookie = name + "=" + value + ";" + expires + ";path=/";
-}
-
-function getCookie(name) {
-  let nameEQ = name + "=";
-  let ca = document.cookie.split(';');
-  for(let i=0;i < ca.length;i++) {
-    let c = ca[i];
-    while (c.charAt(0)===' ') c = c.substring(1,c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length,c.length);
-  }
-  return null;
-}
-
+/**
+ * Root component. Loads the cafe's public config (name, tables, contact
+ * details) and renders the menu once it's available. Owns the single
+ * antd notification instance shared with Menu, so all toasts stack together.
+ */
 function App() {
   const [config, setConfig] = useState(null);
-  const [api, contextHolder] = notification.useNotification();  
+  const [notify, contextHolder] = notification.useNotification();
 
   useEffect(() => {
     fetch('/.config.json')
@@ -36,17 +23,17 @@ function App() {
       })
       .then(data => {
         setConfig(data);
-        api.open({
+        notify.open({
           message: 'Welcome to ' + data.cafeName,
           description: `Please take a seat, select the number from the top of this menu (or select takeaway) and place your order.`,
           duration: 15,
         });
-        
+
       })
       .catch(error => {
         console.error("Error fetching config:", error);
       });
-  }, []);
+  }, [notify]);
 
   return (
     <>
@@ -58,7 +45,7 @@ function App() {
             <div className="cafe-strapline">{config.strapline}</div>
         </div>
         <div className="bottom-strap"><Strapline config={config} /></div>
-        <div className="menu-container"><Menu config={config}/></div>
+        <div className="menu-container"><Menu config={config} notify={notify} /></div>
       </div>
       )}
     </>

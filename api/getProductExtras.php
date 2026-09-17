@@ -1,6 +1,14 @@
 <?php
+/**
+ * Public endpoint: list the extras/mods available for one product.
+ * Expects: { product_id: number }
+ */
 
-include 'setup.php';
+require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
+
+$receivedData = get_json_input();
 
 $query = "SELECT * FROM product_extras WHERE product_id = ?";
 $stmt = $mysqli->prepare($query);
@@ -10,9 +18,7 @@ $result = $stmt->get_result();
 
 if ($result) {
     $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
-    $json = json_encode($rows);
-    send_response($json, 200);
+    send_response($rows, 200);
 } else {
-    // Handle the error if the query fails
-    send_response("Error: " . mysqli_error($connection), 500);
+    send_response("Error: " . mysqli_error($mysqli), 500);
 }

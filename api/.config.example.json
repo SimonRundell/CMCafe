@@ -1,0 +1,10 @@
+{
+  "debug": true,
+  "db": {
+    "host": "localhost",
+    "port": 3306,
+    "name": "cmcafe",
+    "user": "username",
+    "pass": "changeme"
+  }
+}

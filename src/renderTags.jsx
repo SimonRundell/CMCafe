@@ -1,12 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { Tag } from 'antd';
 
+/**
+ * Read-only list of the extras/mods chosen for one cart line, shown in the
+ * order drawer.
+ *
+ * @param {object} props
+ * @param {object} props.config Public cafe config (api base URL).
+ * @param {number} props.productID Product these extras belong to.
+ * @param {number[]} props.mods Mod IDs chosen for this line.
+ */
 function RenderTags({ config, productID, mods }) {
     const [extras, setExtras] = useState([]);
 
     useEffect(() => {
         const jsonData = JSON.stringify({product_id: parseInt(productID)});
-        // console.log(jsonData);
         fetch(config.api + '/getProductExtras.php', {
             method: 'POST',
             headers: {
@@ -16,8 +25,7 @@ function RenderTags({ config, productID, mods }) {
         })
         .then(response => response.json())
         .then(responseData => {
-            // console.log(responseData);
-            setExtras(JSON.parse(responseData));
+            setExtras(responseData);
         });
     }, [config.api, productID]);
 
@@ -26,10 +34,10 @@ function RenderTags({ config, productID, mods }) {
         <div className="order-extras-container">
             {extras && extras.map(extra => (
                 mods.includes(extra.id) && (
-                    <Tag key={extra.id} 
-                        value={extra.mod_cost} 
+                    <Tag key={extra.id}
+                        value={extra.mod_cost}
                         checked={mods.includes(extra.id)}
-                        style={{padding: '0', margin: '0', marginRight: '5px'}}>
+                        className="order-extra-tag">
                         {extra.mod_name}
                     </Tag>
                 )
@@ -37,8 +45,14 @@ function RenderTags({ config, productID, mods }) {
         </div>
         </>
     );
-
-
 }
 
-export default RenderTags
+RenderTags.propTypes = {
+    config: PropTypes.shape({
+        api: PropTypes.string.isRequired,
+    }).isRequired,
+    productID: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    mods: PropTypes.array.isRequired,
+};
+
+export default RenderTags;

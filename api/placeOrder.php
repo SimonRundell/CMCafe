@@ -1,68 +1,123 @@
 <?php
+/**
+ * Public endpoint: place a new order.
+ *
+ * Prices are never trusted from the client — every product cost and mod
+ * cost is re-looked-up from the database here, so the total returned is
+ * always the true chargeable amount regardless of what the browser sent.
+ *
+ * Expects: {
+ *   tableNumber: string,
+ *   order: [{ productID: number, orderMods: string }],  // orderMods is a
+ *     pipe-joined list of product_extras ids, e.g. "3|7", as sent by getMenu.jsx
+ *   orderNotes: string,
+ *   allergyAlert: 0|1
+ * }
+ */
 
-include 'setup.php';
+require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
+
+$receivedData = get_json_input();
 
 $tableNumber = $receivedData['tableNumber'];
 $orders = $receivedData['order'];
 
-if (!is_array($orders)) {
+if (!is_array($orders) || count($orders) === 0) {
     send_response("Invalid orders data", 400);
 }
 
-$mysqli->begin_transaction(); // Start a transaction
+$productStmt = $mysqli->prepare("SELECT product_cost, product_available FROM products WHERE id = ?");
+$modStmt = $mysqli->prepare("SELECT mod_cost FROM product_extras WHERE id = ? AND product_id = ?");
 
-// first log whole order
+// Resolve every line's true cost from the database before writing anything.
+$resolvedOrders = [];
+foreach ($orders as $order) {
+    $productId = (int)$order['productID'];
+
+    $productStmt->bind_param("i", $productId);
+    $productStmt->execute();
+    $productResult = $productStmt->get_result()->fetch_assoc();
+
+    if (!$productResult || (int)$productResult['product_available'] !== 1) {
+        send_response("Product $productId is not available", 400);
+    }
+
+    $productCost = (float)$productResult['product_cost'];
+    $orderModsRaw = (string)($order['orderMods'] ?? '');
+    $modIds = $orderModsRaw === '' ? [] : array_map('intval', explode('|', $orderModsRaw));
+    $modsCost = 0.0;
+
+    foreach ($modIds as $modId) {
+        $modId = (int)$modId;
+        $modStmt->bind_param("ii", $modId, $productId);
+        $modStmt->execute();
+        $modResult = $modStmt->get_result()->fetch_assoc();
+
+        if (!$modResult) {
+            send_response("Extra $modId is not valid for product $productId", 400);
+        }
+
+        $modsCost += (float)$modResult['mod_cost'];
+    }
+
+    $resolvedOrders[] = [
+        'productId' => $productId,
+        'productCost' => $productCost,
+        'modIds' => $modIds,
+        'modsCost' => $modsCost,
+    ];
+}
+
+$productStmt->close();
+$modStmt->close();
+
+$mysqli->begin_transaction();
+
 $query = "INSERT INTO customer_order (order_table, order_complete, order_total, order_paid) VALUES (?, 0, 0, 0)";
 $stmt = $mysqli->prepare($query);
 $stmt->bind_param("s", $tableNumber);
 
-if ($stmt->execute()) {
-    $orderId = $stmt->insert_id; // Get the ID of the inserted record
-} else {
-    $mysqli->rollback(); // Rollback the transaction on error
+if (!$stmt->execute()) {
+    $mysqli->rollback();
     send_response("customer_order Error: " . $mysqli->error, 500);
-    $mysqli->close();
-    exit;
 }
+$orderId = $stmt->insert_id;
 $stmt->close();
 
-// then log each item in the order_items table
 $stmt = $mysqli->prepare("INSERT INTO order_items (order_id, order_product, product_cost, order_mods) VALUES (?, ?, ?, ?)");
 if ($stmt === false) {
-    die('Prepare failed: ' . htmlspecialchars($mysqli->error));
+    $mysqli->rollback();
+    send_response("Prepare failed: " . $mysqli->error, 500);
 }
 
 $orderTotal = 0;
-foreach ($orders as $order) {
-    
-    $order_product = (int)$order['productID']; // Assuming this maps to order_product
-    $productCost = (float)$order['productCost'];
-    $order_mods = $order['orderMods'];
-    $orderModsCost = (float)$order['orderModsCost'];
+foreach ($resolvedOrders as $line) {
+    $orderTotal += $line['productCost'] + $line['modsCost'];
+    $orderModsString = implode('|', $line['modIds']);
 
-    $orderTotal += $productCost + $orderModsCost;
+    $stmt->bind_param('iids', $orderId, $line['productId'], $line['productCost'], $orderModsString);
 
-    // Bind parameters
-    $stmt->bind_param('iids', $orderId, $order_product, $productCost, $order_mods);
-
-    // Execute the statement
     if (!$stmt->execute()) {
-        die('Execute failed: ' . htmlspecialchars($stmt->error));
+        $mysqli->rollback();
+        send_response("order_items Error: " . $stmt->error, 500);
     }
 }
-
-// Close the statement after the loop
 $stmt->close();
 
-$mysqli->commit(); // Commit the transaction
-
-// now write the total cost back to the customer_order table
 $query = "UPDATE customer_order SET time_placed = NOW(), order_total = ?, order_notes = ?, allergy_alert = ? WHERE id = ?";
 $stmt = $mysqli->prepare($query);
-$stmt->bind_param("dsii", $orderTotal, $receivedData['orderNotes'], $receivedData['allergyAlert'], $orderId);
-$stmt->execute();
+$allergyAlert = (int)($receivedData['allergyAlert'] ?? 0);
+$orderNotes = $receivedData['orderNotes'] ?? '';
+$stmt->bind_param("dsii", $orderTotal, $orderNotes, $allergyAlert, $orderId);
 
-send_response(array("outcome" => "Order placed successfully.", "orderid" => $orderId, "totalCost"=> $orderTotal), 200);
+if (!$stmt->execute()) {
+    $mysqli->rollback();
+    send_response("customer_order update Error: " . $mysqli->error, 500);
+}
+$stmt->close();
 
-// Close the database connection
-$mysqli->close();
+$mysqli->commit();
+
+send_response(["outcome" => "Order placed successfully.", "orderid" => $orderId, "totalCost" => $orderTotal], 200);

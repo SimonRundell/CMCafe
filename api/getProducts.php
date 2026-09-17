@@ -1,15 +1,20 @@
 <?php
+/**
+ * Public endpoint: list all products, ordered by category.
+ */
 
-include 'setup.php';
+require_once __DIR__ . '/cors.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
+
+$receivedData = get_json_input();
 
 $query = "SELECT * FROM products ORDER BY product_category";
 $result = mysqli_query($mysqli, $query);
 
 if ($result) {
     $rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
-    $json = json_encode($rows);
-    send_response($json, 200);
+    send_response($rows, 200);
 } else {
-    // Handle the error if the query fails
-    send_response("Error: " . mysqli_error($connection), 500);
+    send_response("Error: " . mysqli_error($mysqli), 500);
 }

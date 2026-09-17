@@ -147,6 +147,23 @@ button:hover {
   width: 75px;
 }
 
+.menu-item-unavailable {
+  color: lightgrey;
+  background-color: grey;
+}
+
+.menu-item-unavailable .menu-item-title,
+.menu-item-unavailable .menu-item-description,
+.menu-item-unavailable .menu-item-price {
+  color: lightgrey;
+}
+
+.menu-item-price-total {
+  border-top: 1px solid black;
+  margin-top: 5px;
+  margin-right: 8px;
+}
+
 .extras {
   display: flex;
   flex-direction: column;
@@ -169,6 +186,20 @@ button:hover {
 .extras-container > * {
   margin: 0; 
   padding: 0; 
+}
+
+.extra-tag {
+  margin-right: 5px;
+}
+
+.order-extra-tag {
+  padding: 0;
+  margin: 0;
+  margin-right: 5px;
+}
+
+.table-select {
+  width: 200px;
 }
 
 .order-extras-container {
@@ -232,6 +263,10 @@ button:hover {
   font-weight: bold;
   color: #333;
   margin-bottom: 20px;
+}
+
+.allergy-checkbox {
+  color: red;
 }
 
 .total-cost {

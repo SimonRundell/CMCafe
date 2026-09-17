@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Checkbox, notification, Input, Drawer } from 'antd';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Checkbox, Input, Drawer } from 'antd';
 import TableSelect from './getTable';
 import LightBox from './lightBox';
 import AddExtras from './addExtras';
@@ -7,12 +8,20 @@ import RenderTags from './renderTags';
 
 const { TextArea } = Input;
 
-function Menu({ config }) {
+/**
+ * The menu, cart and order-submission flow. Renders every product grouped
+ * by category, and a drawer for the current order.
+ *
+ * @param {object} props
+ * @param {object} props.config Public cafe config (api base URL, tables, etc).
+ * @param {object} props.notify antd notification instance (`notification.useNotification()`),
+ *   shared with App so all toasts stack together.
+ */
+function Menu({ config, notify }) {
     const [menu, setMenu] = useState(null);
     const [showOrder, setShowOrder] = useState(false);
     const [tableNumber, setTableNumber] = useState("");
     const [order, setOrder] = useState([]);
-    const [api, contextHolder] = notification.useNotification();
     const [currentTotal, setCurrentTotal] = useState(0);
     const [allergyAlert, setAllergyAlert] = useState(0);
     const [orderNotes, setOrderNotes] = useState("");
@@ -22,23 +31,21 @@ function Menu({ config }) {
     const zero = 0;
 
     useEffect(() => {
-    
+
         fetch( config.api +'/getProducts.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({}),
-           
-        })
-        .then(response => response.json()) 
-        .then(responseData => {
 
-        // console.log(responseData);
-        setMenu(JSON.parse(responseData));
+        })
+        .then(response => response.json())
+        .then(responseData => {
+            setMenu(responseData);
         })
     }, [config.api]);
-    
+
     useEffect(() => {
         let tempTotal = 0;
         order.forEach(item => {
@@ -53,11 +60,9 @@ function Menu({ config }) {
           ...item,
           orderMods: item.orderMods && item.orderMods.map(mod => mod.toString()).join('|') || ""
       }));
-  
+
       const jsonData = JSON.stringify({ tableNumber, order: updatedOrder, orderNotes, allergyAlert });
-  
-      // console.log("Placing order", jsonData);
-      
+
       try {
         const response = await fetch(config.api + '/placeOrder.php', {
           method: 'POST',
@@ -66,11 +71,10 @@ function Menu({ config }) {
           },
           body: jsonData,
         });
-              
+
         if (response.status === 200) {
           const result = await response.json(); // Wait for the promise to resolve
-          // console.log(result); 
-          api.open({
+          notify.open({
             message: 'Your order has been placed',
             description: `${result.outcome}.
                     Your Order Number is ${result.orderid}
@@ -86,17 +90,15 @@ function Menu({ config }) {
     };
 
     const submitOrder = () => {
-        // console.log("Order submitted by table", tableNumber, order);
         placeOrder({tableNumber, order, orderNotes, allergyAlert});
     }
 
     const addToOrder = (productID, productName, productCost, productAvailable, orderMods, orderModsCost) => {
         if (productAvailable === '1') {
-          // console.log("Adding to order product", {productID, productName, productCost, orderMods, orderModsCost});
           setOrder([...order, {productID, productName, productCost, orderMods, orderModsCost}]);
           setShowOrder(true);
         } else{
-          api.open({
+          notify.open({
             message: 'Apologies, this item is not available',
             description:
               'Please choose another item.',
@@ -117,7 +119,7 @@ function Menu({ config }) {
     const handleSetOrderMods = (itemId, mods) => {
       setOrderMods((prev) => ({ ...prev, [itemId]: mods }));
     };
-  
+
     const handleSetOrderModsCost = (itemId, cost) => {
       setOrderModsCost((prev) => ({ ...prev, [itemId]: cost }));
     };
@@ -134,7 +136,7 @@ function Menu({ config }) {
           handleSetOrderMods(item.id, "");
         });
 
-        api.open({
+        notify.open({
           message: 'Order Reset',
           description:
             'Your previous order has been cleared.',
@@ -142,13 +144,10 @@ function Menu({ config }) {
         });
     }
 
-    let previousCategory = "";
- 
     return (
       <>
         {menu && (
           <div className="app-menu">
-            {contextHolder}
             <div className="table-number">
               <div className="click-me" onClick={resetTable}>New Order:</div>
               <TableSelect config={config} tableNumber={tableNumber} setTableNumber={setTableNumber} />
@@ -168,17 +167,17 @@ function Menu({ config }) {
                   }
                   if (item.product_available === '0') {
                     acc.elements.push(
-                      <div className="menu-item" key={item.id} style={{ color: 'lightgrey', backgroundColor: 'grey' }}>
-                        <div className="menu-item-title" style={{ color: 'lightgrey' }}>{item.product_name}</div>
-                        <div className="menu-item-description" style={{ color: 'lightgrey' }}>{item.product_description}</div>
-                        <div className="menu-item-price" style={{ color: 'lightgrey' }}>
+                      <div className="menu-item menu-item-unavailable" key={item.id}>
+                        <div className="menu-item-title">{item.product_name}</div>
+                        <div className="menu-item-description">{item.product_description}</div>
+                        <div className="menu-item-price">
                           £ Not available
                         </div>
                       </div>
                     );
                   } else {
                     acc.elements.push(
-                      
+
                       <div className="menu-item" key={item.id}>
                         <div className="menu-item-title">{item.product_name}</div>
                         <div className="mobile-title-image">
@@ -187,9 +186,9 @@ function Menu({ config }) {
                           </div>
                           <div className="menu-item-description-container">
                               <div className="menu-item-description">{item.product_description}</div>
-                              <div><AddExtras config={config} 
-                                              productID={item.id} 
-                                              setOrderMods={(mods)=>handleSetOrderMods(item.id, mods)} 
+                              <div><AddExtras config={config}
+                                              productID={item.id}
+                                              setOrderMods={(mods)=>handleSetOrderMods(item.id, mods)}
                                               setOrderModsCost={(mods)=> handleSetOrderModsCost(item.id, mods)}/>
                               </div>
                           </div>
@@ -197,13 +196,13 @@ function Menu({ config }) {
                         <div className="menu-item-price">
                           £{!isNaN(parseFloat(item.product_cost)) ? parseFloat(item.product_cost).toFixed(2) : parseFloat(zero).toFixed(2)}
                           <div className="extras">
-                            + £{!isNaN(parseFloat(orderModsCost[item.id])) ? parseFloat(orderModsCost[item.id]).toFixed(2) : parseFloat(zero).toFixed(2)}  
+                            + £{!isNaN(parseFloat(orderModsCost[item.id])) ? parseFloat(orderModsCost[item.id]).toFixed(2) : parseFloat(zero).toFixed(2)}
                         </div>
-                          <div style={{borderTop: '1px solid black', marginTop: '5px', marginRight: '8px'}}>
+                          <div className="menu-item-price-total">
                           £{(parseFloat(item.product_cost) + parseFloat(orderModsCost[item.id] || zero)).toFixed(2)}
                           </div>
                         </div>
-                        
+
                         <button className="menu-order-button"
                           onClick={() =>
                             addToOrder(item.id, item.product_name, item.product_cost, item.product_available, orderMods[item.id], orderModsCost[item.id])
@@ -254,7 +253,7 @@ function Menu({ config }) {
                   <TextArea rows={4} value={orderNotes} onChange={(e) => handleOrderNotes(e)} placeholder="Any notes or requests"/>
                 </div>
                 <div>
-                  <Checkbox checked={allergyAlert} onChange={(e) => setAllergyAlert(e.target.checked)} style={{'color': 'red'}}>Alert staff to allergies</Checkbox>
+                  <Checkbox checked={allergyAlert} onChange={(e) => setAllergyAlert(e.target.checked)} className="allergy-checkbox">Alert staff to allergies</Checkbox>
                 </div>
                 {tableNumber && (
                 <button className="menu-order-button" onClick={submitOrder}>Submit Order</button>
@@ -266,5 +265,14 @@ function Menu({ config }) {
       </>
     )
 }
+
+Menu.propTypes = {
+    config: PropTypes.shape({
+        api: PropTypes.string.isRequired,
+    }).isRequired,
+    notify: PropTypes.shape({
+        open: PropTypes.func.isRequired,
+    }).isRequired,
+};
 
 export default Menu;
